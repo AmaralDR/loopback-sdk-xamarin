@@ -189,6 +189,15 @@ public bool isPrimitiveType(string strType)
 	return false;
 }
 
+// Capitalize a name
+public static string capitalize(string input)
+{
+	if(string.IsNullOrEmpty(input))
+		return input;
+
+	return input.ElementAt(0).ToString().ToUpper() + input.Substring(1);
+}
+
 // Converts a loopback type name to c# type name. E.g. Number to double
 public String jsTypeToCsType(String JSType)
 {
@@ -212,6 +221,8 @@ public String jsTypeToCsType(String JSType)
 
 	if(JSType == "ObjectID")
 		return "String";
-
-	return "Object";
+	if(JSType == "Array")
+		return "Object";
+	
+	return capitalize(JSType);
 }#>

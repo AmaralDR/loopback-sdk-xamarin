@@ -36,7 +36,7 @@ using Newtonsoft.Json.Linq;
 using RestSharp.Portable;
 using LBXamarinSDK;
 using LBXamarinSDK.LBRepo;
-using System.Net.Http;
+//using System.Net.Http;
 using System.Threading;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -51,9 +51,10 @@ namespace LBXamarinSDK
 	// Gateway: Communication with Server API
 	public class Gateway
     {
-        private static Uri BASE_URL = new Uri("http://10.0.0.1:3000/api/");
-		private static RestClient _client = new RestClient {BaseUrl = BASE_URL};
+        private static Uri BASE_URL = new Uri("http://127.0.0.1:3000/api/");
+		private static RestSharp.Portable.HttpClient.RestClient _client = new RestSharp.Portable.HttpClient.RestClient {BaseUrl = BASE_URL};
         private static string _accessToken = null;
+		private static AccessToken _user = null;
 		private static bool _debugMode = false;
         private static CancellationTokenSource _cts = new CancellationTokenSource();
 		private static int _timeout = 6000;
@@ -99,6 +100,7 @@ namespace LBXamarinSDK
 		// Sets the server URL to the local address
 		public static void SetServerBaseURLToSelf()
         {
+		
             var firstOrDefault = Dns.GetHostEntry(Dns.GetHostName()).AddressList.FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork);
             if (firstOrDefault != null)
             {
@@ -113,6 +115,7 @@ namespace LBXamarinSDK
                     Debug.WriteLine("-------- >> DEBUG: Error finding self URL.");
                 throw new Exception();
             }
+			
         }
 <#}#>
 
@@ -136,7 +139,7 @@ namespace LBXamarinSDK
         }
 		/* *** */
 
-		// Define server Base Url for API requests. Example: "http://10.0.0.1:3000/api/"
+		// Define server Base Url for API requests. Example: "http://127.0.0.1:3000/api/"
         public static void SetServerBaseURL(Uri baseUrl)
         {
             BASE_URL = baseUrl;
@@ -148,12 +151,17 @@ namespace LBXamarinSDK
         {
             if (accessToken != null)
                 _accessToken = accessToken.id;
+				_user = accessToken;
         }
 
 		// Get the access token ID currently being used by the gateway
 		public static string GetAccessTokenId()
         {
             return _accessToken;
+        }
+		public static String GetUser()
+        {
+            return _user.userId;
         }
 
 		// Performs a request to determine if connected to server
@@ -163,7 +171,7 @@ namespace LBXamarinSDK
 			_cts.Token.ThrowIfCancellationRequested();
 			try
 			{
-				var request = new RestRequest ("/", new HttpMethod ("GET"));
+				var request = new RestRequest ("/", Method.GET);
 				var response = await _client.Execute<JObject>(request, _cts.Token).ConfigureAwait(false);
 				if (response != null)
 				{
@@ -180,6 +188,8 @@ namespace LBXamarinSDK
                     Debug.WriteLine("-------- >> DEBUG: Error: " + e.Message + " >>");	 
 				return false;
 			}
+			
+            return false;
 		}
 
 		// Resets the authorization token
@@ -200,19 +210,26 @@ namespace LBXamarinSDK
                 _client.ReplaceHandler(typeof(JsonDeserializer), new CustomConverter());
                 initFlag = true;
             }
-
-            var response = await _client.Execute<JRaw>(request, _cts.Token).ConfigureAwait(false);
-            var responseData = response.Data != null ? response.Data.ToString() : "";
-            
-            if (!response.IsSuccess)
-            {
+			try
+			{
 			
-                if(_debugMode)
-                    Debug.WriteLine("-------- >> DEBUG: Error performing request, status code " + (int)response.StatusCode + ", Payload: " + responseData);
-                throw new RestException(responseData, (int)response.StatusCode);
-            }
+				var response = await _client.Execute<JRaw>(request, _cts.Token).ConfigureAwait(false);
+				var responseData = response.Data != null ? response.Data.ToString() : "";
+            
+				if (!response.IsSuccess)
+				{
+			
+					if(_debugMode)
+						Debug.WriteLine("-------- >> DEBUG: Error performing request, status code " + (int)response.StatusCode + ", Payload: " + responseData);
+					throw new RestException(responseData, (int)response.StatusCode);
+				}
 
-            return JsonConvert.DeserializeObject<T>(responseData);
+				return JsonConvert.DeserializeObject<T>(responseData);
+			}
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
 
 
@@ -220,7 +237,9 @@ namespace LBXamarinSDK
         public static async Task<T> PerformRequest<T>(string APIUrl, string json, string method = "POST", IDictionary<string, string> queryStrings = null)
 		{
 			RestRequest request = null;
-            request = new RestRequest(APIUrl, new HttpMethod(method));
+            //request = new RestRequest(APIUrl, new HttpMethod(method));
+			request = new RestRequest(APIUrl, RestSharp.Portable.Method.GET);
+			
 
             if(_debugMode)
                 Debug.WriteLine("-------- >> DEBUG: Performing " + method + " request at URL: '" + _client.BuildUri(request) + "', Json: " + (string.IsNullOrEmpty(json) ? "EMPTY" : json));

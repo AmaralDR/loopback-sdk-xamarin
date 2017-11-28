@@ -13,6 +13,7 @@
 <#@ import namespace="Newtonsoft.Json" #>
 <#@ import namespace="Newtonsoft.Json.Linq" #>
 <#@ parameter name="jsonModel" type="System.String" #>
+<#@ parameter name="XamarinFormsMVVM" type="System.Boolean" #>
 /**
  *** Dynamic Models ***
  */
@@ -69,7 +70,42 @@ foreach (var model in modelsJSON.First.First)
 			string fieldAccessTag;
 			string fieldType;
 			string fieldName;
-
+			if (XamarinFormsMVVM){
+				fieldAccessTag = "private";
+				//fieldType = nullablify(jsTypeToCsType(fieldsTypes.ElementAt(i)));
+				fieldType = jsTypeToCsType(fieldsTypes.ElementAt(i));
+				fieldName = createNullableName(createLegalVariable(fields.ElementAt(i)));
+				#>		[JsonIgnore] 
+				<#
+				if(fieldIsArrayList.ElementAt(i)){
+#>				
+	<#= fieldAccessTag #> ObservableCollection<<#=fields.ElementAt(i) == IDField ? idType : fieldType#>> <#=fieldName#> = new ObservableCollection<<#=fields.ElementAt(i) == IDField ? idType : fieldType#>>();			
+		[JsonProperty ("<#=fields.ElementAt(i)#>", NullValueHandling = NullValueHandling.Ignore)]
+		public ObservableCollection<<#=jsTypeToCsType(fieldsTypes.ElementAt(i))#>> <#= createLegalVariable(fields.ElementAt(i)) #>
+		{
+			get { return <#=createNullableName(createLegalVariable(fields.ElementAt(i)))#>; }
+			set { <#= createNullableName(createLegalVariable(fields.ElementAt(i)))#> = value; }
+		}
+		<#}else{
+#>		<#= fieldAccessTag #> <#=fields.ElementAt(i) == IDField ? idType : fieldType#> <#=fieldName#>;			
+				
+		[JsonProperty ("<#=fields.ElementAt(i)#>", NullValueHandling = NullValueHandling.Ignore)]
+	public <#=fields.ElementAt(i) == IDField ? idType : fieldType#> <#= createLegalVariable(fields.ElementAt(i)) #>
+		{
+<#	if(isPrimitiveType(jsTypeToCsType(fieldsTypes.ElementAt(i))) && fields.ElementAt(i) != IDField){
+		#>
+			get { return <#=createNullableName(createLegalVariable(fields.ElementAt(i)))#>; } //primitivo
+	<#
+		}else{
+		#>
+			get { return <#=createNullableName(createLegalVariable(fields.ElementAt(i)))#> ; }//não primitivo
+		<#
+		}
+		#>	set { SetProperty (ref  <#= createNullableName(createLegalVariable(fields.ElementAt(i)))#> , value); }
+		}
+	<#}
+			}else{
+	
 			// Do we need a nullable interface for the field or not?
 			if(isPrimitiveType(jsTypeToCsType(fieldsTypes.ElementAt(i))) && !fieldIsArrayList.ElementAt(i) && fields.ElementAt(i) != IDField)
             {
@@ -82,7 +118,7 @@ foreach (var model in modelsJSON.First.First)
 
 				// Add an interface:
 #>		[JsonIgnore]
-		public <#=jsTypeToCsType(fieldsTypes.ElementAt(i))#> <#= createLegalVariable(fields.ElementAt(i)) #>
+	public <#=jsTypeToCsType(fieldsTypes.ElementAt(i))#> <#= createLegalVariable(fields.ElementAt(i)) #>
 		{
 			get { return <#=createNullableName(createLegalVariable(fields.ElementAt(i)))#> ?? new <#= jsTypeToCsType(fieldsTypes.ElementAt(i)) #>(); }
 			set { <#= createNullableName(createLegalVariable(fields.ElementAt(i)))#> = value; }
@@ -95,12 +131,13 @@ foreach (var model in modelsJSON.First.First)
 				fieldType = jsTypeToCsType(fieldsTypes.ElementAt(i));
 				fieldName = createLegalVariable(fields.ElementAt(i));
 			}
-
+		
 			// Add the field itself:
 			#>		[JsonProperty ("<#=fields.ElementAt(i)#>", NullValueHandling = NullValueHandling.Ignore)]
-		<#= fieldAccessTag #> <#=fields.ElementAt(i) == IDField ? idType : fieldType#><#if(fieldIsArrayList.ElementAt(i)){#>[]<#}#> <#=fieldName#> { get; set; }
+			<#= fieldAccessTag #> <#=fields.ElementAt(i) == IDField ? idType : fieldType#><#if(fieldIsArrayList.ElementAt(i)){#>[]<#}#> <#=fieldName#> { get; set; }			
 
-<#}#>		
+<#}
+}#>		
 		// This method identifies the ID field
 		public override string getID()
 		{

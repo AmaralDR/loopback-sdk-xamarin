@@ -45,7 +45,7 @@ namespace LBXamarinSDKGenerator
             CompilerParameters compilerParams = new CompilerParameters() { OutputAssembly = outputPath };
             compilerParams.ReferencedAssemblies.Add("System.dll");
             compilerParams.ReferencedAssemblies.Add("System.Core.dll");
-           // compilerParams.ReferencedAssemblies.Add("System.Net.Http.dll");
+            // compilerParams.ReferencedAssemblies.Add("System.Net.Http.dll");
             compilerParams.ReferencedAssemblies.Add(currentPath + "/RestSharp.Portable.dll");
             compilerParams.ReferencedAssemblies.Add(currentPath + "/Newtonsoft.Json.dll");
             compilerParams.WarningLevel = 1;
@@ -136,6 +136,17 @@ namespace LBXamarinSDKGenerator
                 constantCode.Session["XamarinForms"] = false;
             }
 
+            if (flags.Contains("mvvm"))
+            {
+                Console.WriteLine(">> Parsing for Xamarin-Forms MVVM compatibility...");
+                constantCode.Session["XamarinFormsMVVM"] = true;
+                dynamicModelsTemplate.Session["XamarinFormsMVVM"] = true;
+            }
+            else
+            {
+                constantCode.Session["XamarinFormsMVVM"] = false;
+                dynamicModelsTemplate.Session["XamarinFormsMVVM"] = false;
+            }
             if (flags.Contains("force"))
             {
                 Console.WriteLine(">> Forcing SDK creation...");

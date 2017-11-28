@@ -283,7 +283,7 @@ foreach (var model in modelsJSON.First.First)
 
 				// Sort the parameters so that the query parameters, to which we add as default parameters, will be last.
 				var secondaryZip = paramsNames.Zip(paramsTypes, (x, y) => new { x, y }).ToList();
-				var zip = paramsPlacements.Zip(secondaryZip, (x, y) => new { x, y }).OrderBy(pair => pair.x).ToList().ToList();
+				var zip = paramsPlacements.Zip(secondaryZip, (x, y) => new { x, y }).Where(pair => pair.x.ToString() != "req").OrderBy(pair => pair.x).ToList().ToList();
 				paramsPlacements = zip.Select(pair => pair.x).ToList();
 				paramsNames = zip.Select(pair => pair.y).ToList().Select(pair => pair.x).ToList();
 				paramsTypes = zip.Select(pair => pair.y).ToList().Select(pair => pair.y).ToList();

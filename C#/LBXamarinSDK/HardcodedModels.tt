@@ -11,6 +11,7 @@
 <#@ import namespace="Newtonsoft.Json.Linq" #>
 <#@ parameter name="jsonModel" type="System.String" #>
 <#@ parameter name="XamarinForms" type="System.Boolean" #>
+<#@ parameter name="XamarinFormsMVVM" type="System.Boolean" #>
 <#
 // Uncomment the followingline when debugging:
 //string jsonModel = File.ReadAllText("D:/debug.txt");
@@ -34,16 +35,21 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using RestSharp.Portable;
-using LBXamarinSDK;
-using LBXamarinSDK.LBRepo;
+//using LBXamarinSDK;
+//using LBXamarinSDK.LBRepo;
 //using System.Net.Http;
 using System.Threading;
-using System.Net;
+//using System.Net;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json.Converters;
 using RestSharp.Portable.Deserializers;
 using System.Diagnostics;
 <#if(!XamarinForms) {#>using System.Net.Sockets;<#}#>
+<#if(XamarinFormsMVVM) {#>
+using Prism.Mvvm;
+using Prism.Navigation;
+using System.Collections.ObjectModel;
+<#}#>
 
 
 namespace LBXamarinSDK
@@ -52,7 +58,8 @@ namespace LBXamarinSDK
 	public class Gateway
     {
         private static Uri BASE_URL = new Uri("http://127.0.0.1:3000/api/");
-		private static RestSharp.Portable.HttpClient.RestClient _client = new RestSharp.Portable.HttpClient.RestClient {BaseUrl = BASE_URL};
+        private static Uri BASE_SERVER = new Uri("http://127.0.0.1:3000/");
+        private static RestSharp.Portable.HttpClient.RestClient _client = new RestSharp.Portable.HttpClient.RestClient { BaseUrl = BASE_URL };
         private static string _accessToken = null;
 		private static AccessToken _user = null;
 		private static bool _debugMode = false;
@@ -100,7 +107,6 @@ namespace LBXamarinSDK
 		// Sets the server URL to the local address
 		public static void SetServerBaseURLToSelf()
         {
-		
             var firstOrDefault = Dns.GetHostEntry(Dns.GetHostName()).AddressList.FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork);
             if (firstOrDefault != null)
             {
@@ -115,7 +121,6 @@ namespace LBXamarinSDK
                     Debug.WriteLine("-------- >> DEBUG: Error finding self URL.");
                 throw new Exception();
             }
-			
         }
 <#}#>
 
@@ -139,9 +144,20 @@ namespace LBXamarinSDK
         }
 		/* *** */
 
-		// Define server Base Url for API requests. Example: "http://127.0.0.1:3000/api/"
+	    public static string GetBaseUrlServer()
+        {
+            return BASE_SERVER.ToString();
+        }
+        public static void SetServerBaseURL(string baseUrl = "127.0.0.1:3000", string rotaAPI = "api")
+        {
+            BASE_SERVER = new Uri(String.Format("http://{0}/", baseUrl));
+            BASE_URL = new Uri(String.Format("http://{0}/{1}/", baseUrl, rotaAPI));
+            _client.BaseUrl = BASE_URL;
+        }
+        // Define server Base Url for API requests. Example: "http://127.0.0.1:3000/api/"
         public static void SetServerBaseURL(Uri baseUrl)
         {
+            BASE_SERVER = baseUrl;
             BASE_URL = baseUrl;
             _client.BaseUrl = baseUrl;
         }
@@ -188,8 +204,8 @@ namespace LBXamarinSDK
                     Debug.WriteLine("-------- >> DEBUG: Error: " + e.Message + " >>");	 
 				return false;
 			}
-			
-            return false;
+
+			return false;
 		}
 
 		// Resets the authorization token
@@ -210,23 +226,23 @@ namespace LBXamarinSDK
                 _client.ReplaceHandler(typeof(JsonDeserializer), new CustomConverter());
                 initFlag = true;
             }
-			try
+				try
 			{
-			
-				var response = await _client.Execute<JRaw>(request, _cts.Token).ConfigureAwait(false);
-				var responseData = response.Data != null ? response.Data.ToString() : "";
-            
-				if (!response.IsSuccess)
-				{
-			
-					if(_debugMode)
-						Debug.WriteLine("-------- >> DEBUG: Error performing request, status code " + (int)response.StatusCode + ", Payload: " + responseData);
-					throw new RestException(responseData, (int)response.StatusCode);
-				}
 
-				return JsonConvert.DeserializeObject<T>(responseData);
-			}
-            catch (Exception ex)
+            var response = await _client.Execute<JRaw>(request, _cts.Token).ConfigureAwait(false);
+            var responseData = response.Data != null ? response.Data.ToString() : "";
+            
+            if (!response.IsSuccess)
+            {
+			
+                if(_debugMode)
+                    Debug.WriteLine("-------- >> DEBUG: Error performing request, status code " + (int)response.StatusCode + ", Payload: " + responseData);
+                throw new RestException(responseData, (int)response.StatusCode);
+            }
+
+            return JsonConvert.DeserializeObject<T>(responseData);
+        }
+		            catch (Exception ex)
             {
                 throw;
             }
@@ -237,9 +253,7 @@ namespace LBXamarinSDK
         public static async Task<T> PerformRequest<T>(string APIUrl, string json, string method = "POST", IDictionary<string, string> queryStrings = null)
 		{
 			RestRequest request = null;
-            //request = new RestRequest(APIUrl, new HttpMethod(method));
-			request = new RestRequest(APIUrl, RestSharp.Portable.Method.GET);
-			
+            request = new RestRequest(APIUrl, (Method)Enum.Parse(typeof(Method), method));
 
             if(_debugMode)
                 Debug.WriteLine("-------- >> DEBUG: Performing " + method + " request at URL: '" + _client.BuildUri(request) + "', Json: " + (string.IsNullOrEmpty(json) ? "EMPTY" : json));
@@ -296,6 +310,7 @@ namespace LBXamarinSDK
         }
     }
 
+	<#if(!XamarinFormsMVVM) {#>
 	// Base model for all LBXamarinSDK Models
 	public abstract class LBModel
     {
@@ -304,6 +319,38 @@ namespace LBXamarinSDK
             return "";
         }
     }
+	<#}#>
+
+	<#if(XamarinFormsMVVM) {#>
+    // Base model for all LBXamarinSDK Models with MVVM
+    public abstract class LBModel : BindableBase, INavigationAware, IDestructible
+    {
+
+        public virtual String getID()
+        {
+            return "";
+        }
+        public virtual void OnNavigatedFrom(NavigationParameters parameters)
+        {
+
+        }
+
+        public virtual void OnNavigatedTo(NavigationParameters parameters)
+        {
+
+        }
+
+        public virtual void OnNavigatingTo(NavigationParameters parameters)
+        {
+
+        }
+
+        public virtual void Destroy()
+        {
+
+        }
+    }
+	<#}#>
 
 	// Allow conversion between the return type of login methods into AccessToken, e.g. "AccessToken myAccessToken = await Users.login(someCredentials);
 	// TODO: Add this jobject->class implicit conversion as a templated function for all classes inheriting from model

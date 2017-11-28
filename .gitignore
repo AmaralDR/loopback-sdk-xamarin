@@ -21,3 +21,5 @@ C#/packages/
 C#/lb-xmTesters/bin/
 C#/lb-xmTesters/obj/
 test-server/node_modules/
+/.vs/LBXamarinSDK/v15
+/.vs/loopback-sdk-xamarin/v15

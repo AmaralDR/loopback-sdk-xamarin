@@ -11,26 +11,26 @@ var semver = require('semver');
 var optimist = require('optimist');
 var generator = require('../index.js');
 var edgePath = path.resolve('./');
-var edge = require ('edge');
+var edge = require('edge');
 
 var argv = optimist
   .usage('Generate an SDK for Loopback in C#.' +
-    '\n\nUsage: node lb-xm [server_path] [flags]' +
-    '\n\nSupported flags: ' +
-    '\n\n\tdll\t\t Compile a dll containing the SDK' +
-    '\n\tforms\t\t Ensure compatibility with Xamarin-Forms' +
-    '\n\tforce\t\t Remove unsupported functions' +
-    '\n\tcheck\t\t Check if the SDK compiles successfully as C# code' +
-    '\n\nE.g. "node lb-xm c:/testServer/server/server.js" outputs a CS file.' +
-    '\nE.g. "node lb-xm c:/testServer/server/server.js dll" outputs a compiled dll.')
+  '\n\nUsage: node lb-xm [server_path] [flags]' +
+  '\n\nSupported flags: ' +
+  '\n\n\tdll\t\t Compile a dll containing the SDK' +
+  '\n\tforms\t\t Ensure compatibility with Xamarin-Forms' +
+  '\n\tforce\t\t Remove unsupported functions' +
+  '\n\tcheck\t\t Check if the SDK compiles successfully as C# code' +
+  '\n\nE.g. "node lb-xm c:/testServer/server/server.js" outputs a CS file.' +
+  '\nE.g. "node lb-xm c:/testServer/server/server.js dll" outputs a compiled dll.')
   .demand(1)
   .argv;
 
 var appFile = path.resolve(argv._[0]);
 var silencerA = console.log;
 var silencerB = console.error;
-console.error = function(){};
-console.log = function(){};
+console.error = function () { };
+console.log = function () { };
 var app = require(appFile);
 assertLoopBackVersion();
 var ngModuleName = argv['module-name'] || 'lbServices';
@@ -47,13 +47,17 @@ var flagD = argv._[4];
 var flagE = argv._[5];
 var params = [result, __dirname, flagA, flagB, flagC, flagD, flagE];
 
-if(sdkCreationFunction(params, true)) {
+
+var fsJson = require('fs');
+fsJson.writeFileSync('./output/resultado.json', result);
+console.info(__dirname,flagA, flagB, flagC, flagD, flagE);
+if (sdkCreationFunction(params, true)) {
   console.log('>> Done.');
 } else {
   console.log('>> Done with errors.');
 };
 
-process.nextTick(function() {
+process.nextTick(function () {
   process.exit();
 });
 
@@ -67,8 +71,8 @@ function assertLoopBackVersion() {
   if (semver.lt(loopback.version, '1.6.0')) {
     console.error(
       '\nThe code generator does not support applications based\n' +
-        'on LoopBack versions older than 1.6.0. Please upgrade your\n' +
-        'project to a recent version of LoopBack and run this tool again.\n');
+      'on LoopBack versions older than 1.6.0. Please upgrade your\n' +
+      'project to a recent version of LoopBack and run this tool again.\n');
     process.exit(1);
   }
 }

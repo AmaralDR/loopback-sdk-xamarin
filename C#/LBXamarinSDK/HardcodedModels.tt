@@ -167,8 +167,13 @@ namespace LBXamarinSDK
         {
             if (accessToken != null)
                 _accessToken = accessToken.id;
-				_user = accessToken;
+			_user = accessToken;
         }
+
+		public static void SetAccessToken(string token)
+		{
+			_accessToken = token;
+		}
 
 		// Get the access token ID currently being used by the gateway
 		public static string GetAccessTokenId()
@@ -277,7 +282,7 @@ namespace LBXamarinSDK
             }
 
 			// Add body parameters to the request
-			if ((method == "POST" || method == "PUT") && json != "")
+			if ((method == "POST" || method == "PUT" || method == "PATCH") && json != "")
             {
 				request.AddHeader("ContentType", "application/json");
 				request.AddParameter ("application/json", JObject.Parse(json), ParameterType.RequestBody);
@@ -306,6 +311,12 @@ namespace LBXamarinSDK
         public static async Task<T> PerformPutRequest<U, T>(U objToPut, string APIUrl, IDictionary<string, string> queryStrings = null)
         {
             var res = await PerformRequest<T>(APIUrl, JsonConvert.SerializeObject(objToPut), "PUT", queryStrings).ConfigureAwait(false);
+            return res;
+        }
+        // T is the expected return type, U is the input type. E.g. U is Car, T is Car
+        public static async Task<T> PerformPatchRequest<U, T>(U objToPut, string APIUrl, IDictionary<string, string> queryStrings = null)
+        {
+            var res = await PerformRequest<T>(APIUrl, JsonConvert.SerializeObject(objToPut), "PATCH", queryStrings).ConfigureAwait(false);
             return res;
         }
     }

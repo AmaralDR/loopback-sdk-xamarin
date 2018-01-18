@@ -40,6 +40,7 @@ namespace LBXamarinSDK
 IList<string> crudsList = new List<string>()
 {
 	"create",
+	"patchorcreate",
 	"upsert",
 	"exists",
 	"findbyid",
@@ -120,7 +121,12 @@ foreach (var model in modelsJSON.First.First)
                 var response = await Gateway.PerformPutRequest<T, T>(theModel, APIPath).ConfigureAwait(false);
                 return response;
             }
-
+            public static async Task<T> Save(T theModel)
+            {
+                String APIPath = getAPIPath("PatchOrCreate");
+                var response = await Gateway.PerformPatchRequest<T, T>(theModel, APIPath).ConfigureAwait(false);
+                return response;
+            }
 			/*
 			 * Check whether a model instance exists in the data source
 			 */

@@ -1,6 +1,8 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\lib"
   ],
+  "SelectedNode": "\\lib\\services.template.ejs",
   "PreviewInSolutionExplorer": false
 }

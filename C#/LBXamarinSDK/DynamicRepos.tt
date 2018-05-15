@@ -249,12 +249,17 @@ foreach (var model in modelsJSON.First.First)
 					parsedMethodNames.Add(methodName.ToLower());
 					continue;
 				}
-
-				string returnTypeOrig = initialParseReturnType((string)rawMethodData.First.First.ElementAt(3).First.First);
+				string returnClassName=   rawMethodData.First.First.ElementAt(3).First.Count() > 0 ? (string) rawMethodData.First.First.ElementAt(3).First.ElementAt(2).First: "";
+				if(returnClassName == ""){
+					returnClassName = (string)rawMethodData.First.First.ElementAt(3).First.First;
+				}else{
+					modelNames.Add((string)returnClassName.ToLower());
+				}
+				string returnTypeOrig = initialParseReturnType((string) returnClassName);
 				bool jsonIsArraySpecification = rawMethodData.First.First.ElementAt(3).First.Count() > 0 ? (bool)rawMethodData.First.First.ElementAt(3).First.ElementAt(1).First : false;
                 bool returnTypeIsArray = determineReturnIsArray(jsonIsArraySpecification, returnTypeOrig);
 				string returnType = finalParseReturnType(returnTypeOrig, returnTypeIsArray);
-				bool returnIsRoot = rawMethodData.First.First.ElementAt(3).First.Count() > 0 ? (bool)rawMethodData.First.First.ElementAt(3).First.ElementAt(2).First : false;
+				bool returnIsRoot = rawMethodData.First.First.ElementAt(3).First.Count() > 0 ? (bool)rawMethodData.First.First.ElementAt(3).First.ElementAt(3).First : false;
 				
 				// Get the parameters passed to the method
 				var paramsRawData = JObject.Parse(methodJsonToken.First.ElementAt(2).First.ToString());
